@@ -3,38 +3,43 @@ using SeniorAPI.Service;
 
 namespace SeniorAPI.Middleware
 {
-    public class ValidacaoJWTMiddleware(RequestDelegate requestDelegate, TokenService tokenService)
+    public class ValidacaoJWTMiddleware(RequestDelegate next, TokenService tokenService)
     {
-        private readonly RequestDelegate _requestDelegate = requestDelegate;
+        private readonly RequestDelegate _next = next;
         private readonly TokenService _tokenService = tokenService;
 
         public async Task InvokeAsync(HttpContext httpContext)
         {
+            // Ignora a validação de token nas rotas de login
+            if (httpContext.Request.Path.StartsWithSegments("/api/Autenticacao/login"))
+            {
+                await _next(httpContext); // Continua sem validação
+                return;
+            }
+
+            // Verifica se o token está presente no cabeçalho Authorization
             if (httpContext.Request.Headers.TryGetValue("Authorization", out StringValues authorizationHeader))
             {
-                string? token = authorizationHeader.FirstOrDefault()?.Split(" ").Last();
+                var token = authorizationHeader.FirstOrDefault()?.Split(" ").Last();
 
-                if (token != null)
+                // Valida o token
+                if (token == null || !_tokenService.ValidarToken(token))
                 {
-                    string? usuario = httpContext.User?.Identity?.Name;
-
-                    if (usuario != null && !_tokenService.ValidarToken(usuario, token))
-                    {
-                        httpContext.Response.StatusCode = 401;
-
-                        await httpContext.Response.WriteAsync("Token inválido ou expirado.");
-                        return;
-                    }
+                    httpContext.Response.StatusCode = 401; // Unauthorized
+                    await httpContext.Response.WriteAsync("Token inválido ou expirado.");
+                    return;
                 }
             }
             else
             {
-                httpContext.Response.StatusCode = 400;
-                await httpContext.Response.WriteAsync("Token não enviado");
+                // Caso o token não tenha sido enviado
+                httpContext.Response.StatusCode = 400; // Bad Request
+                await httpContext.Response.WriteAsync("Token não enviado.");
                 return;
             }
 
-            await _requestDelegate(httpContext);
+            // Chama o próximo middleware ou controller
+            await _next(httpContext);
         }
     }
 }

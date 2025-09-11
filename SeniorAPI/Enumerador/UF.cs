@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace SeniorAPI.Enum
+namespace SeniorAPI.Enumerador
 {
     public enum UF
     {
