@@ -1,5 +1,8 @@
-﻿using Microsoft.Extensions.Primitives;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Primitives;
 using SeniorAPI.Service;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace SeniorAPI.Middleware
 {
@@ -10,36 +13,72 @@ namespace SeniorAPI.Middleware
 
         public async Task InvokeAsync(HttpContext httpContext)
         {
-            // Ignora a validação de token nas rotas de login
             if (httpContext.Request.Path.StartsWithSegments("/api/Autenticacao/login"))
             {
-                await _next(httpContext); // Continua sem validação
+                await _next(httpContext);
                 return;
             }
 
-            // Verifica se o token está presente no cabeçalho Authorization
             if (httpContext.Request.Headers.TryGetValue("Authorization", out StringValues authorizationHeader))
             {
                 var token = authorizationHeader.FirstOrDefault()?.Split(" ").Last();
 
-                // Valida o token
-                if (token == null || !_tokenService.ValidarToken(token))
+                if (token == null)
                 {
-                    httpContext.Response.StatusCode = 401; // Unauthorized
+                    httpContext.Response.StatusCode = 400;
+                    await httpContext.Response.WriteAsync("Token não enviado.");
+                    return;
+                }
+
+                ClaimsPrincipal? principal = ValidateTokenAndExtractClaims(token);
+                if (principal == null)
+                {
+                    httpContext.Response.StatusCode = 401;
                     await httpContext.Response.WriteAsync("Token inválido ou expirado.");
                     return;
                 }
+
+                string? usuario = principal.Identity?.Name;
+                if (usuario == null || !_tokenService.ValidarToken(usuario, token))
+                {
+                    httpContext.Response.StatusCode = 401;
+                    await httpContext.Response.WriteAsync("Token inválido ou expirado.");
+                    return;
+                }
+
+                httpContext.User = principal;
             }
             else
             {
-                // Caso o token não tenha sido enviado
-                httpContext.Response.StatusCode = 400; // Bad Request
+                httpContext.Response.StatusCode = 400;
                 await httpContext.Response.WriteAsync("Token não enviado.");
                 return;
             }
 
-            // Chama o próximo middleware ou controller
             await _next(httpContext);
+        }
+
+        private static ClaimsPrincipal? ValidateTokenAndExtractClaims(string token)
+        {
+            try
+            {
+                JwtSecurityTokenHandler tokenHandler = new();
+                JwtSecurityToken jwtToken = tokenHandler.ReadJwtToken(token);
+
+                if (jwtToken == null)
+                {
+                    return null;
+                }
+
+                ClaimsIdentity identity = new ClaimsIdentity(jwtToken.Claims, JwtBearerDefaults.AuthenticationScheme);
+                ClaimsPrincipal principal = new ClaimsPrincipal(identity);
+
+                return principal;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
     }
 }
