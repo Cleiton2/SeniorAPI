@@ -76,18 +76,24 @@ dotnet test SeniorAPI.Testes ou executar pela interface visual studio
 
  - Como foram apresentadas duas tabelas, que possuem mesma estrutura(nomes de tabela), então de fato é somente necessário utilizar as colunas, com o UNION ALL, e criar uma coluna, que vai servir como indice de referência, sobre qual das tabelas o item pertence.
 ----
-SELECT t.Numero as NumeroProcesso,  
-       p.Nome as NomeFornecedor,  
-       t.DataVencimento,  
-       t.DataPagamento,  
-       (t.Valor + t.Acrescimo - t.Desconto) AS ValorLiquido  
-  CASE  
-    WHEN t.tipoConta = 'contasAPagar' THEN 'contasAPagar'  
-    WHEN t.tipoConta = 'contasPagas' THEN 'contasPagas'  
-  END AS tipoConta  
-From  
- (SELECT id, idPessoa, descricao, valor, dataVencimento, status, 'contasAPagar' AS tipoConta FROM ContasApagar  
-     UNION ALL  
-     SELECT id, idPessoa, descricao, valor, dataVencimento, status, 'contasPagas' AS tipoConta FROM ContasPagas) AS t  
+SELECT  
+    COALESCE(cp.Numero, cap.Numero) AS NumeroProcesso,  
+    p.Nome AS NomeFornecedor,  
+    COALESCE(cp.DataVencimento, cap.DataVencimento) AS DataVencimento,  
+    cp.DataPagamento AS DataPagamento,  
+    CASE  
+        WHEN cp.Numero IS NOT NULL THEN   
+            (cp.Valor + cp.Acrescimento - cp.Desconto)  
+        ELSE   
+            (cap.Valor + cap.Acrescimento - cap.Desconto)  
+    END AS ValorLiquido,  
+    CASE  
+        WHEN cp.Numero IS NOT NULL THEN 'Paga'  
+        ELSE 'A Pagar'  
+    END AS StatusConta  
+FROM  
+    ContasAPagar cap  
 LEFT JOIN  
-    Pessoas p ON t.CodigoFornecedor = p.Codigo;  
+    ContasPagas cp ON cap.Numero = cp.Numero AND cap.CodigoFornecedor = cp.CodigoFornecedor  
+LEFT JOIN  
+    Pessoas p ON cap.CodigoFornecedor = p.Codigo  
