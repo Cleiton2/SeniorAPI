@@ -1,33 +1,76 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SeniorAPI.Enumerador;
 using SeniorAPI.Model;
-using SeniorAPI.Service;
+using SeniorAPI.Service.Interfaces;
 
 namespace SeniorAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class PessoaController : ControllerBase
+    public class PessoaController(IPessoaService pessoaService) : ControllerBase
     {
-        private readonly PessoaService _pessoaSerivce;
+        private readonly IPessoaService _pessoaSerivce = pessoaService;
 
-        public PessoaController(PessoaService pessoaService)
+        [HttpPost("adicionarPessoa")]
+        public IActionResult AdicionePessoa([FromBody] PessoaModel pessoaModel)
         {
-            _pessoaSerivce = pessoaService;
+            PessoaModel pessoaAdicionada = _pessoaSerivce.Adicionar(pessoaModel);
+
+            return Ok(pessoaAdicionada);
         }
 
-        [HttpPost("Adicionar")]
-        public IActionResult AdicionarPessoa([FromBody] PessoaModel novaPessoa)
+        [HttpGet("Consultar")]
+        public IActionResult ConsultePessoas()
         {
-            PessoaModel resultado = _pessoaSerivce.Adicionar(novaPessoa);
+            List<PessoaModel> pessoas = _pessoaSerivce.ObterPessoas();
 
-            if (resultado == null)
+            return Ok(pessoas);
+        }
+
+        [HttpGet("consultarPorCodigo/{codigo:int}")]
+        public IActionResult ConsultePessoa(int codigo)
+        {
+            PessoaModel? pessoa = _pessoaSerivce.ObterPessoaPorCodigo(codigo);
+
+            return pessoa != null ? Ok(pessoa) : Ok("Pessoa não encontrada");
+        }
+
+        [HttpPut("editar/{codigo}")]
+        public IActionResult EditePessoa(int codigo, [FromBody] PessoaModel pessoaModel)
+        {
+            if(pessoaModel == null)
             {
-                return BadRequest(resultado);
+                throw new ArgumentException("Informe os dados da pessoa.");
             }
 
-            return Ok(resultado);
+            PessoaModel pessoaEditada = _pessoaSerivce.EditarPessoa(codigo, pessoaModel);
+
+            return Ok(pessoaEditada);
+        }
+
+        [HttpGet("consultarPorUF/{UF}")]
+        public IActionResult ConsultePessoasPeloUF(string UF)
+        {
+            if (Enum.TryParse(UF, true, out UF ufEnum))
+            {
+                List<PessoaModel> pessoas = _pessoaSerivce.ObterPessoasPorUF(ufEnum);
+
+                return Ok(pessoas);
+            }
+            else
+            {
+                return BadRequest("UF inválida.");
+            }
+        }
+
+        [HttpDelete("deletar/{codigo}")]
+        public IActionResult DeletePessoa(int codigo)
+        {
+            _pessoaSerivce.DeletarPessoa(codigo);
+
+            return Ok();
         }
     }
 }
