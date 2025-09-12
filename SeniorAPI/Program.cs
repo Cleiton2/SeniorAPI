@@ -1,6 +1,9 @@
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json.Converters;
+using SeniorAPI.Helpers;
 using SeniorAPI.Middleware;
 using SeniorAPI.Service;
+using SeniorAPI.Service.Interfaces;
 using System.Text.Json.Serialization;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -10,7 +13,7 @@ IConfigurationSection appSettings = builder.Configuration.GetSection("AppSetting
 string secrets = appSettings["Secret"] ?? throw new InvalidOperationException("Token não encontrado em appsettings");
 
 builder.Services.AddSingleton(sp => new TokenService(secrets));
-builder.Services.AddSingleton<PessoaService>();
+builder.Services.AddSingleton<IPessoaService,PessoaService>();
 
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer(options =>
@@ -33,10 +36,16 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
+builder.Services.AddControllers()
+    .AddNewtonsoftJson(options =>
+    {
+        options.SerializerSettings.Converters.Add(new CustomDateTimeConverter());
+        options.SerializerSettings.Converters.Add(new StringEnumConverter());
+    });
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    // Definir o esquema de segurança para o JWT Bearer
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
@@ -45,7 +54,6 @@ builder.Services.AddSwaggerGen(c =>
         Type = SecuritySchemeType.ApiKey
     });
 
-    // Definir a segurança global para a API (aplicando o JWT a todos os endpoints)
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -57,7 +65,7 @@ builder.Services.AddSwaggerGen(c =>
                     Id = "Bearer"
                 }
             },
-            new string[] {}
+            Array.Empty<string>()
         }
     });
 });
