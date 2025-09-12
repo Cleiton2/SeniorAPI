@@ -69,3 +69,25 @@ Para executar os testes:
 
 ```bash
 dotnet test SeniorAPI.Testes ou executar pela interface visual studio
+
+````
+
+## Sql Proposto(parte 2 desafio)
+
+ - Como foram apresentadas duas tabelas, que possuem mesma estrutura(nomes de tabela), então de fato é somente necessário utilizar as colunas, com o UNION ALL, e criar uma coluna, que vai servir como indice de referência, sobre qual das tabelas o item pertence.
+----
+SELECT t.Numero as NumeroProcesso,  
+       p.Nome as NomeFornecedor,  
+       t.DataVencimento,  
+       t.DataPagamento,  
+       (t.Valor + t.Acrescimo - t.Desconto) AS ValorLiquido  
+  CASE  
+    WHEN t.tipoConta = 'contasAPagar' THEN 'contasAPagar'  
+    WHEN t.tipoConta = 'contasPagas' THEN 'contasPagas'  
+  END AS tipoConta  
+From  
+ (SELECT id, idPessoa, descricao, valor, dataVencimento, status, 'contasAPagar' AS tipoConta FROM ContasApagar  
+     UNION ALL  
+     SELECT id, idPessoa, descricao, valor, dataVencimento, status, 'contasPagas' AS tipoConta FROM ContasPagas) AS t  
+LEFT JOIN  
+    Pessoas p ON t.CodigoFornecedor = p.Codigo;  
