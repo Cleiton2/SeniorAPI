@@ -13,7 +13,7 @@ namespace SeniorAPI.Controllers
     {
         private readonly IPessoaService _pessoaSerivce = pessoaService;
 
-        [HttpPost("adicionarPessoa")]
+        [HttpPost("AdicionarPessoa")]
         public IActionResult AdicionePessoa([FromBody] PessoaModel pessoaModel)
         {
             PessoaModel pessoaAdicionada = _pessoaSerivce.Adicionar(pessoaModel);
@@ -29,7 +29,7 @@ namespace SeniorAPI.Controllers
             return Ok(pessoas);
         }
 
-        [HttpGet("consultarPorCodigo/{codigo:int}")]
+        [HttpGet("ConsultarPorCodigo/{codigo:int}")]
         public IActionResult ConsultePessoa(int codigo)
         {
             PessoaModel? pessoa = _pessoaSerivce.ObterPessoaPorCodigo(codigo);
@@ -37,7 +37,7 @@ namespace SeniorAPI.Controllers
             return pessoa != null ? Ok(pessoa) : Ok("Pessoa não encontrada");
         }
 
-        [HttpPut("editar/{codigo}")]
+        [HttpPut("Editar/{codigo}")]
         public IActionResult EditePessoa(int codigo, [FromBody] PessoaModel pessoaModel)
         {
             if(pessoaModel == null)
@@ -50,7 +50,7 @@ namespace SeniorAPI.Controllers
             return Ok(pessoaEditada);
         }
 
-        [HttpGet("consultarPorUF/{UF}")]
+        [HttpGet("ConsultarPorUF/{UF}")]
         public IActionResult ConsultePessoasPeloUF(string UF)
         {
             if (Enum.TryParse(UF, true, out UF ufEnum))
@@ -65,7 +65,7 @@ namespace SeniorAPI.Controllers
             }
         }
 
-        [HttpDelete("deletar/{codigo}")]
+        [HttpDelete("Deletar/{codigo}")]
         public IActionResult DeletePessoa(int codigo)
         {
             _pessoaSerivce.DeletarPessoa(codigo);
