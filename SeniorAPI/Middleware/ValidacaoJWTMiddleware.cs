@@ -21,7 +21,7 @@ namespace SeniorAPI.Middleware
 
             if (httpContext.Request.Headers.TryGetValue("Authorization", out StringValues authorizationHeader))
             {
-                var token = authorizationHeader.FirstOrDefault()?.Split(" ").Last();
+                string? token = authorizationHeader.FirstOrDefault()?.Split(" ").Last();
 
                 if (token == null)
                 {
@@ -70,8 +70,8 @@ namespace SeniorAPI.Middleware
                     return null;
                 }
 
-                ClaimsIdentity identity = new ClaimsIdentity(jwtToken.Claims, JwtBearerDefaults.AuthenticationScheme);
-                ClaimsPrincipal principal = new ClaimsPrincipal(identity);
+                ClaimsIdentity identity = new(jwtToken.Claims, JwtBearerDefaults.AuthenticationScheme);
+                ClaimsPrincipal principal = new(identity);
 
                 return principal;
             }

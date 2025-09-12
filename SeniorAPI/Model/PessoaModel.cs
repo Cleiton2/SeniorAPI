@@ -9,6 +9,8 @@ namespace SeniorAPI.Model
         public int Codigo { get; set; }
         public required string Nome { get; set; }
         public string? CPF { get; set; }
+
+        [JsonConverter(typeof(UFSiglaConverter))]
         public UF UF { get; set; }
 
         [JsonConverter(typeof(CustomDateTimeConverter))]
