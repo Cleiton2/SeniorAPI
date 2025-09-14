@@ -10,17 +10,17 @@ Uma API RESTful desenvolvida em **C#**, com objetivo de gerenciar operações de
 - **Arquitetura:** API RESTful
 - **Ferramenta de Teste:** Swagger
 - **Estrutura do Projeto:**
-SeniorAPI
-├─ Controllers
-├─ Enumerador
-├─ Helpers
-├─ Middleware
-├─ Model
-├─ Service
-├─ Validacao
-├─ appsettings.json
-├─ Program.cs
-└─ SeniorAPI.http
+SeniorAPI  
+├─ Controllers  
+├─ Enumerador  
+├─ Helpers  
+├─ Middleware  
+├─ Model  
+├─ Service  
+├─ Validacao  
+├─ appsettings.json  
+├─ Program.cs  
+└─ SeniorAPI.http  
 
 ---
 
